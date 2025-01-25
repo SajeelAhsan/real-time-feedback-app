@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/model/User.model";
 
-
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -14,60 +13,64 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
-     
-      async authorize(credentials: any): Promise<any>{
-        await dbConnect()
+
+      async authorize(credentials: any): Promise<any> {
+        await dbConnect();
         try {
           const user = await UserModel.findOne({
             $or: [
               { email: credentials.identifier },
-              { username: credentials.identifier }
-            ]
-          })
-          if(!user){
-            throw new Error("User not found with the provided Email or username!")
+              { username: credentials.identifier },
+            ],
+          });
+          if (!user) {
+            throw new Error(
+              "User not found with the provided Email or username!"
+            );
           }
-          if(!user.isVerified){
-            throw new Error("User is not Verified!")
+          if (!user.isVerified) {
+            throw new Error("User is not Verified!");
           }
-          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
-          if(isPasswordValid){
-            return user
-          }else{
-            throw new Error("Invalid Password!")
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+          if (isPasswordValid) {
+            return user;
+          } else {
+            throw new Error("Invalid Password!");
           }
         } catch (err: any) {
-          throw new Error(err)
+          throw new Error(err);
         }
-      }
-    })
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if(user){
-        token._id = user._id?.toString()
+      if (user) {
+        token._id = user._id?.toString();
         token.isVerified = user.isVerified;
         token.isAcceptingMessage = user.isAcceptingMessage;
         token.username = user.username;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
-      if(token){
-        session.user._id = token._id
+      if (token) {
+        session.user._id = token._id;
         session.user.isVerified = token.isVerified;
         session.user.isAcceptingMessage = token.isAcceptingMessage;
-        session.user.username = token.username
+        session.user.username = token.username;
       }
-      return session
-    }
+      return session;
+    },
   },
   pages: {
-    signIn: '/sign-in'
+    signIn: "/sign-in",
   },
-  session:{
-    strategy:"jwt"
+  session: {
+    strategy: "jwt",
   },
-  secret:process.env.NEXTAUTH_SECRET,
-
-}
+  secret: process.env.NEXTAUTH_SECRET,
+};
