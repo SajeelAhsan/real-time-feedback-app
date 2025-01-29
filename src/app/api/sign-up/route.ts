@@ -2,7 +2,7 @@ import dbConnect from "@/lib/dbConnect.ts";
 import UserModel from "@/model/User.model.ts";
 import bcrypt from "bcryptjs";
 import { sendVerificationEmail } from "@/helpers/sendVerificationEmail.ts";
-import { resend } from "@/lib/resend";
+//import { resend } from "@/lib/resend";
 export async function POST(req: Request) {
   await dbConnect();
 
