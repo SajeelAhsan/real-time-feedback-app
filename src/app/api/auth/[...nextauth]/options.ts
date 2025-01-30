@@ -1,55 +1,57 @@
-import { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
-import dbConnect from "@/lib/dbConnect";
-import UserModel from "@/model/User.model";
+import { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import bcrypt from 'bcryptjs';
+import dbConnect from '@/lib/dbConnect';
+import UserModel from '@/model/User.model';
 
 export const authOptions: NextAuthOptions = {
-  debug: true,  // Add this to enable detailed logging
   providers: [
     CredentialsProvider({
-      id: "credentials",
-      name: "Credentials",
+      id: 'credentials',
+      name: 'Credentials',
       credentials: {
-        email: { label: "Email", type: "text" },
+        identifier: { label: "Email/Username", type: "text" }, // ✅ Match "identifier"
         password: { label: "Password", type: "password" },
       },
-
       async authorize(credentials: Record<string, any>): Promise<any> {
         await dbConnect();
         try {
-          if (!credentials.email || !credentials.password) {
-            throw new Error("Missing email or password");
+          // Check for "identifier" instead of "email"
+          if (!credentials.identifier || !credentials.password) {
+            throw new Error("Missing identifier or password");
           }
       
           const user = await UserModel.findOne({
-            $or: [{ email: credentials.email }, { username: credentials.email }],
+            $or: [
+              { email: credentials.identifier }, // Search by email
+              { username: credentials.identifier }, // Search by username
+            ],
           });
-      
+          console.log("User found:", user); // Debugging log
+
           if (!user) {
-            throw new Error("User not found with the provided Email or Username!");
+            throw new Error('User not found with the provided Email or Username!');
           }
-      
+
           if (!user.isVerified) {
-            throw new Error("User is not Verified!");
+            throw new Error('Please verify your email before signing in.');
           }
-      
+
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
           if (!isPasswordValid) {
-            throw new Error("Invalid Password!");
+            throw new Error('Invalid Password!');
           }
-      
+
           return user;
-        } catch (err) {
-          console.error("Authorization Error:", err.message); // Debugging log
-          throw new Error(err.message);
+        } catch (error) {
+          console.error('Authorization Error:', error.message);
+          throw new Error(error.message);
         }
-      }
-    })
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      console.log("JWT Callback:", token, user);  // Debugging log
       if (user) {
         token._id = user._id?.toString();
         token.isVerified = user.isVerified;
@@ -59,7 +61,6 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      console.log("Session Callback:", session, token);  // Debugging log
       if (session.user) {
         session.user._id = token._id;
         session.user.isVerified = token.isVerified;
@@ -67,15 +68,13 @@ export const authOptions: NextAuthOptions = {
         session.user.username = token.username;
       }
       return session;
-    }
+    },
   },
   pages: {
-    signIn: "/sign-in",
+    signIn: '/sign-in',
   },
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
-
-
