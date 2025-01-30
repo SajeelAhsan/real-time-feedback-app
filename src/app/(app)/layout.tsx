@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} bg-gray-600`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} bg-white-600`}>
           {children}
       </body>
     </html>
