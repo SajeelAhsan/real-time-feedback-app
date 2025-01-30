@@ -5,7 +5,12 @@ export async function POST(req: Request) {
   await dbConnect();
 
   try {
-    const { username, verifyCode } = await req.json();
+    const rawBody = await req.text();
+    console.log("Raw request body:", rawBody);
+
+    // Now parse it as JSON
+    const { username, verifyCode } = JSON.parse(rawBody);
+    console.log("Parsed request data:", { username, verifyCode });
     console.log("Received request data:", { username, verifyCode });
 
     const decodedUsername = decodeURIComponent(username);
